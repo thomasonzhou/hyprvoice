@@ -1,0 +1,36 @@
+pkgname=hyprvoice-local
+pkgver=1.0.2
+pkgrel=1
+pkgdesc="Voice-powered typing for Wayland/Hyprland (local source build)"
+arch=('x86_64')
+url="https://github.com/leonardotrapani/hyprvoice"
+license=('MIT')
+depends=(
+    'pipewire'
+    'pipewire-pulse'
+    'pipewire-audio'
+    'wl-clipboard'
+    'wtype'
+    'libnotify'
+    'systemd'
+)
+makedepends=('go')
+optdepends=(
+    'hyprland: For Hyprland window manager integration'
+    'sway: For Sway window manager integration'
+    'ydotool: Alternative text injection backend (recommended for Chromium apps)'
+)
+provides=('hyprvoice' 'hyprvoice-bin')
+conflicts=('hyprvoice' 'hyprvoice-bin')
+install=hyprvoice.install
+
+build() {
+    cd "/home/thchzh/src/hyprvoice"
+    go build -trimpath -o hyprvoice ./cmd/hyprvoice
+}
+
+package() {
+    cd "/home/thchzh/src/hyprvoice"
+    install -Dm755 "hyprvoice" "${pkgdir}/usr/bin/hyprvoice"
+    install -Dm644 "packaging/hyprvoice.service" "${pkgdir}/usr/lib/systemd/user/hyprvoice.service"
+}
