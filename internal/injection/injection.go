@@ -12,10 +12,12 @@ type Injector interface {
 }
 
 type Config struct {
-	Backends         []string      // Ordered list: "ydotool", "wtype", "clipboard"
-	YdotoolTimeout   time.Duration // Timeout for ydotool commands
-	WtypeTimeout     time.Duration // Timeout for wtype commands
-	ClipboardTimeout time.Duration // Timeout for clipboard operations
+	Backends          []string      // Ordered list: "ydotool", "wtype", "clipboard"
+	YdotoolTimeout    time.Duration // Timeout for ydotool commands
+	WtypeTimeout      time.Duration // Timeout for wtype commands
+	ClipboardTimeout  time.Duration // Timeout for clipboard operations
+	ClipboardPaste    bool          // Paste clipboard contents after copying via ydotool
+	ClipboardShortcut string        // Paste shortcut for clipboard mode: ctrl+v or ctrl+shift+v
 }
 
 type injector struct {
@@ -33,7 +35,7 @@ func NewInjector(config Config) Injector {
 		case "wtype":
 			backends = append(backends, NewWtypeBackend())
 		case "clipboard":
-			backends = append(backends, NewClipboardBackend())
+			backends = append(backends, NewClipboardBackend(config.ClipboardPaste, config.ClipboardShortcut))
 		default:
 			log.Printf("Injection: unknown backend %q, skipping", name)
 		}
@@ -42,7 +44,7 @@ func NewInjector(config Config) Injector {
 	// Default to clipboard if no valid backends
 	if len(backends) == 0 {
 		log.Printf("Injection: no valid backends configured, defaulting to clipboard")
-		backends = append(backends, NewClipboardBackend())
+		backends = append(backends, NewClipboardBackend(config.ClipboardPaste, config.ClipboardShortcut))
 	}
 
 	return &injector{

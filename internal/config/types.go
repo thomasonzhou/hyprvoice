@@ -70,10 +70,12 @@ type TranscriptionConfig struct {
 }
 
 type InjectionConfig struct {
-	Backends         []string      `toml:"backends"`
-	YdotoolTimeout   time.Duration `toml:"ydotool_timeout"`
-	WtypeTimeout     time.Duration `toml:"wtype_timeout"`
-	ClipboardTimeout time.Duration `toml:"clipboard_timeout"`
+	Backends          []string      `toml:"backends"`
+	YdotoolTimeout    time.Duration `toml:"ydotool_timeout"`
+	WtypeTimeout      time.Duration `toml:"wtype_timeout"`
+	ClipboardTimeout  time.Duration `toml:"clipboard_timeout"`
+	ClipboardPaste    bool          `toml:"clipboard_paste"`
+	ClipboardShortcut string        `toml:"clipboard_shortcut"`
 }
 
 type NotificationsConfig struct {

@@ -20,10 +20,12 @@ func DefaultConfig() *Config {
 			Threads:   0,
 		},
 		Injection: InjectionConfig{
-			Backends:         []string{"ydotool", "wtype", "clipboard"},
-			YdotoolTimeout:   5 * time.Second,
-			WtypeTimeout:     5 * time.Second,
-			ClipboardTimeout: 3 * time.Second,
+			Backends:          []string{"ydotool", "wtype", "clipboard"},
+			YdotoolTimeout:    5 * time.Second,
+			WtypeTimeout:      5 * time.Second,
+			ClipboardTimeout:  3 * time.Second,
+			ClipboardPaste:    false,
+			ClipboardShortcut: "ctrl+v",
 		},
 		Notifications: NotificationsConfig{
 			Enabled: false,

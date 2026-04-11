@@ -117,6 +117,8 @@ func Save(cfg *Config) error {
 	sb.WriteString(fmt.Sprintf("  ydotool_timeout = %q\n", cfg.Injection.YdotoolTimeout.String()))
 	sb.WriteString(fmt.Sprintf("  wtype_timeout = %q\n", cfg.Injection.WtypeTimeout.String()))
 	sb.WriteString(fmt.Sprintf("  clipboard_timeout = %q\n", cfg.Injection.ClipboardTimeout.String()))
+	sb.WriteString(fmt.Sprintf("  clipboard_paste = %v\n", cfg.Injection.ClipboardPaste))
+	sb.WriteString(fmt.Sprintf("  clipboard_shortcut = %q\n", cfg.Injection.ClipboardShortcut))
 	sb.WriteString("\n")
 
 	// Notifications

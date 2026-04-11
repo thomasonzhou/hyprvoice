@@ -106,9 +106,11 @@ func (c *Config) IsLLMEnabled() bool {
 
 func (c *Config) ToInjectionConfig() injection.Config {
 	return injection.Config{
-		Backends:         c.Injection.Backends,
-		YdotoolTimeout:   c.Injection.YdotoolTimeout,
-		WtypeTimeout:     c.Injection.WtypeTimeout,
-		ClipboardTimeout: c.Injection.ClipboardTimeout,
+		Backends:          c.Injection.Backends,
+		YdotoolTimeout:    c.Injection.YdotoolTimeout,
+		WtypeTimeout:      c.Injection.WtypeTimeout,
+		ClipboardTimeout:  c.Injection.ClipboardTimeout,
+		ClipboardPaste:    c.Injection.ClipboardPaste,
+		ClipboardShortcut: c.Injection.ClipboardShortcut,
 	}
 }

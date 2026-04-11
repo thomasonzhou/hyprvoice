@@ -166,6 +166,13 @@ func (c *Config) Validate() error {
 	if c.Injection.ClipboardTimeout <= 0 {
 		return fmt.Errorf("invalid injection.clipboard_timeout: %v", c.Injection.ClipboardTimeout)
 	}
+	if c.Injection.ClipboardShortcut != "" {
+		switch c.Injection.ClipboardShortcut {
+		case "ctrl+v", "ctrl+shift+v":
+		default:
+			return fmt.Errorf("invalid injection.clipboard_shortcut: %s (must be ctrl+v or ctrl+shift+v)", c.Injection.ClipboardShortcut)
+		}
+	}
 
 	validTypes := map[string]bool{"desktop": true, "log": true, "none": true}
 	if !validTypes[c.Notifications.Type] {

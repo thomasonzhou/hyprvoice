@@ -34,8 +34,10 @@ func createTestConfig() *Config {
 		},
 		Injection: InjectionConfig{
 			Backends: []string{"ydotool", "wtype", "clipboard"}, YdotoolTimeout: 5 * time.Second,
-			WtypeTimeout:     5 * time.Second,
-			ClipboardTimeout: 3 * time.Second,
+			WtypeTimeout:      5 * time.Second,
+			ClipboardTimeout:  3 * time.Second,
+			ClipboardPaste:    true,
+			ClipboardShortcut: "ctrl+v",
 		},
 		Notifications: NotificationsConfig{
 			Enabled: true,
@@ -692,6 +694,12 @@ func TestConfig_ConversionMethods(t *testing.T) {
 		}
 		if injectionConfig.ClipboardTimeout != config.Injection.ClipboardTimeout {
 			t.Errorf("ClipboardTimeout mismatch: got %v, want %v", injectionConfig.ClipboardTimeout, config.Injection.ClipboardTimeout)
+		}
+		if injectionConfig.ClipboardPaste != config.Injection.ClipboardPaste {
+			t.Errorf("ClipboardPaste mismatch: got %v, want %v", injectionConfig.ClipboardPaste, config.Injection.ClipboardPaste)
+		}
+		if injectionConfig.ClipboardShortcut != config.Injection.ClipboardShortcut {
+			t.Errorf("ClipboardShortcut mismatch: got %v, want %v", injectionConfig.ClipboardShortcut, config.Injection.ClipboardShortcut)
 		}
 	})
 }
