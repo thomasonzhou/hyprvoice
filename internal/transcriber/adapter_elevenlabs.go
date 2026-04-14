@@ -126,6 +126,6 @@ func (a *ElevenLabsAdapter) Transcribe(ctx context.Context, audioData []byte) (s
 		return "", fmt.Errorf("decode response: %w", err)
 	}
 
-	log.Printf("elevenlabs-adapter: transcribed %d bytes in %v: %q", len(audioData), duration, result.Text)
+	log.Printf("elevenlabs-adapter: transcribed %d bytes in %v (%d chars)", len(audioData), duration, len(result.Text))
 	return result.Text, nil
 }

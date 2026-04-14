@@ -384,7 +384,7 @@ func (a *OpenAIRealtimeAdapter) handleEvent(event openaiRealtimeServerEvent) {
 
 	case "conversation.item.input_audio_transcription.completed":
 		// final transcription result
-		log.Printf("openai-realtime: transcription completed: %q", event.Transcript)
+		log.Printf("openai-realtime: transcription completed (%d chars)", len(event.Transcript))
 		if event.Transcript != "" {
 			a.resultsCh <- TranscriptionResult{Text: event.Transcript, IsFinal: true}
 		}

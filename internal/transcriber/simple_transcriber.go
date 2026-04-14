@@ -112,7 +112,7 @@ func (t *SimpleTranscriber) transcribeAll(ctx context.Context) error {
 		return fmt.Errorf("transcription failed: %w", err)
 	}
 
-	log.Printf("transcriber: transcription completed: %q", text)
+	log.Printf("transcriber: transcription completed (%d chars)", len(text))
 
 	t.transcriptionMu.Lock()
 	t.transcriptionText = text

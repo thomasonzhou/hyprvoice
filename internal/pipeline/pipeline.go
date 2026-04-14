@@ -297,7 +297,7 @@ func (p *pipeline) handleInjectAction(ctx context.Context, recorder recording.Re
 		p.sendError("Transcription Error", "Failed to retrieve transcription", err)
 		return
 	}
-	log.Printf("Pipeline: Final transcription text: %s", transcriptionText)
+	log.Printf("Pipeline: Final transcription captured (%d chars)", len(transcriptionText))
 
 	// LLM post-processing phase
 	textToInject := transcriptionText
@@ -326,7 +326,7 @@ func (p *pipeline) handleInjectAction(ctx context.Context, recorder recording.Re
 				log.Printf("Pipeline: LLM processing failed: %v, using raw transcription", err)
 			} else {
 				textToInject = processed
-				log.Printf("Pipeline: LLM processed text: %s", textToInject)
+				log.Printf("Pipeline: LLM post-processing completed (%d chars)", len(textToInject))
 			}
 		}
 		p.setStatus(Injecting)

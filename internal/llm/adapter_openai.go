@@ -66,6 +66,6 @@ func (a *OpenAIAdapter) Process(ctx context.Context, text string) (string, error
 	}
 
 	result := resp.Choices[0].Message.Content
-	log.Printf("openai-llm-adapter: processed in %v: %q -> %q", duration, text, result)
+	log.Printf("openai-llm-adapter: processed in %v (input=%d chars output=%d chars)", duration, len(text), len(result))
 	return result, nil
 }

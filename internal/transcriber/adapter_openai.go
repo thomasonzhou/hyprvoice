@@ -84,6 +84,6 @@ func (a *OpenAIAdapter) Transcribe(ctx context.Context, audioData []byte) (strin
 		return "", fmt.Errorf("%s transcription: %w", a.providerName, err)
 	}
 
-	log.Printf("%s-adapter: transcribed %d bytes in %v: %q", a.providerName, len(audioData), duration, resp.Text)
+	log.Printf("%s-adapter: transcribed %d bytes in %v (%d chars)", a.providerName, len(audioData), duration, len(resp.Text))
 	return resp.Text, nil
 }

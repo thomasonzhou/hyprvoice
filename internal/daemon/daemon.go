@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -150,7 +151,7 @@ func (d *Daemon) handle(c net.Conn) {
 	defer c.Close()
 	defer d.wg.Done()
 
-	line, err := bufio.NewReader(c).ReadString('\n')
+	line, err := bufio.NewReader(io.LimitReader(c, 4)).ReadString('\n')
 	if err != nil {
 		log.Printf("Client read error: %v", err)
 		fmt.Fprintf(c, "ERR read_error: %v\n", err)
@@ -158,6 +159,10 @@ func (d *Daemon) handle(c net.Conn) {
 	}
 	if len(line) == 0 {
 		fmt.Fprint(c, "ERR empty\n")
+		return
+	}
+	if len(line) > 2 || line[len(line)-1] != '\n' {
+		fmt.Fprint(c, "ERR malformed\n")
 		return
 	}
 	cmd := line[0]

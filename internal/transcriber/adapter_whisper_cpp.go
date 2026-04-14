@@ -103,6 +103,6 @@ func (a *WhisperCppAdapter) Transcribe(ctx context.Context, audioData []byte) (s
 	// parse output - whisper-cli outputs transcription text directly (with -nt flag)
 	text := strings.TrimSpace(stdout.String())
 
-	log.Printf("whisper-cpp: transcribed %d bytes in %v: %q", len(audioData), duration, text)
+	log.Printf("whisper-cpp: transcribed %d bytes in %v (%d chars)", len(audioData), duration, len(text))
 	return text, nil
 }

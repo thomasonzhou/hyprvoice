@@ -20,7 +20,7 @@ func GetConfigPath() (string, error) {
 	}
 
 	hyprvoiceDir := filepath.Join(configDir, "hyprvoice")
-	if err := os.MkdirAll(hyprvoiceDir, 0755); err != nil {
+	if err := os.MkdirAll(hyprvoiceDir, 0o700); err != nil {
 		return "", fmt.Errorf("failed to create config directory: %w", err)
 	}
 
