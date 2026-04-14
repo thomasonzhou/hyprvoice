@@ -26,7 +26,7 @@ func (c *Config) ToTranscriberConfig() transcriber.Config {
 		Provider:  c.Transcription.Provider,
 		Language:  c.resolveEffectiveLanguage(),
 		Model:     c.Transcription.Model,
-		Keywords:  c.Keywords,
+		Keywords:  append([]string(nil), c.Keywords...),
 		Threads:   c.Transcription.Threads,
 		Streaming: c.Transcription.Streaming,
 	}
@@ -68,7 +68,7 @@ func (c *Config) ToLLMConfig() LLMAdapterConfig {
 		AddPunctuation:    c.LLM.PostProcessing.AddPunctuation,
 		FixGrammar:        c.LLM.PostProcessing.FixGrammar,
 		RemoveFillerWords: c.LLM.PostProcessing.RemoveFillerWords,
-		Keywords:          c.Keywords,
+		Keywords:          append([]string(nil), c.Keywords...),
 	}
 
 	if c.LLM.Provider != "" {
@@ -106,7 +106,7 @@ func (c *Config) IsLLMEnabled() bool {
 
 func (c *Config) ToInjectionConfig() injection.Config {
 	return injection.Config{
-		Backends:          c.Injection.Backends,
+		Backends:          append([]string(nil), c.Injection.Backends...),
 		YdotoolTimeout:    c.Injection.YdotoolTimeout,
 		WtypeTimeout:      c.Injection.WtypeTimeout,
 		ClipboardTimeout:  c.Injection.ClipboardTimeout,

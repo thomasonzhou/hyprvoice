@@ -324,7 +324,7 @@ func (a *DeepgramAdapter) readLoop() {
 				if transcript != "" {
 					isFinal := resp.IsFinal || resp.SpeechFinal
 					if isFinal {
-						log.Printf("deepgram: final: %q", transcript)
+						log.Printf("deepgram: final transcription received (%d chars)", len(transcript))
 						// signal finalization (non-blocking)
 						select {
 						case a.finalizeDone <- struct{}{}:

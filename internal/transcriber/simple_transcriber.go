@@ -19,8 +19,10 @@ type SimpleTranscriber struct {
 	bufferMu    sync.Mutex
 
 	// Control
-	running bool
-	wg      sync.WaitGroup
+	lifecycleMu sync.Mutex
+	running     bool
+	stopping    bool
+	wg          sync.WaitGroup
 
 	// Transcription result
 	transcriptionMu   sync.RWMutex
@@ -35,7 +37,10 @@ func NewSimpleTranscriber(config Config, adapter BatchAdapter) *SimpleTranscribe
 }
 
 func (t *SimpleTranscriber) Start(ctx context.Context, frameCh <-chan recording.AudioFrame) (<-chan error, error) {
-	if t.running {
+	t.lifecycleMu.Lock()
+	defer t.lifecycleMu.Unlock()
+
+	if t.running || t.stopping {
 		return nil, fmt.Errorf("transcriber already running")
 	}
 
@@ -50,12 +55,21 @@ func (t *SimpleTranscriber) Start(ctx context.Context, frameCh <-chan recording.
 }
 
 func (t *SimpleTranscriber) Stop(ctx context.Context) error {
+	t.lifecycleMu.Lock()
 	if !t.running {
+		t.lifecycleMu.Unlock()
 		return nil
 	}
+	t.running = false
+	t.stopping = true
+	t.lifecycleMu.Unlock()
 
 	t.wg.Wait()
-	t.running = false
+	defer func() {
+		t.lifecycleMu.Lock()
+		t.stopping = false
+		t.lifecycleMu.Unlock()
+	}()
 
 	// Transcribe all collected audio using the passed context
 	return t.transcribeAll(ctx)

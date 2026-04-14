@@ -27,8 +27,14 @@ type Daemon struct {
 	cancel context.CancelFunc
 
 	pipeline pipeline.Pipeline
+	monitors *pipelineMonitors
 
 	wg sync.WaitGroup
+}
+
+type pipelineMonitors struct {
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 func New() (*Daemon, error) {
@@ -81,11 +87,19 @@ func (d *Daemon) status() pipeline.Status {
 func (d *Daemon) stopPipeline() {
 	d.mu.Lock()
 	p := d.pipeline
+	monitors := d.monitors
 	d.pipeline = nil
+	d.monitors = nil
 	d.mu.Unlock()
 
+	if monitors != nil {
+		monitors.cancel()
+	}
 	if p != nil {
 		p.Stop()
+	}
+	if monitors != nil {
+		monitors.wg.Wait()
 	}
 }
 
@@ -198,14 +212,14 @@ func (d *Daemon) toggle() {
 	case pipeline.Idle:
 		p := pipeline.New(conf)
 		p.Run(d.ctx)
+		monitors := d.startPipelineMonitors(p)
 
 		d.mu.Lock()
 		d.pipeline = p
+		d.monitors = monitors
 		d.mu.Unlock()
 
 		go d.notifier.Send(notify.MsgRecordingStarted)
-		go d.monitorPipelineErrors(p)
-		go d.monitorPipelineNotifications(p)
 
 	case pipeline.Recording:
 		d.stopPipeline()
@@ -239,7 +253,17 @@ func (d *Daemon) cancelPipeline() {
 	}
 }
 
-func (d *Daemon) monitorPipelineErrors(p pipeline.Pipeline) {
+func (d *Daemon) startPipelineMonitors(p pipeline.Pipeline) *pipelineMonitors {
+	ctx, cancel := context.WithCancel(d.ctx)
+	monitors := &pipelineMonitors{cancel: cancel}
+	monitors.wg.Add(2)
+	go d.monitorPipelineErrors(ctx, monitors, p)
+	go d.monitorPipelineNotifications(ctx, monitors, p)
+	return monitors
+}
+
+func (d *Daemon) monitorPipelineErrors(ctx context.Context, monitors *pipelineMonitors, p pipeline.Pipeline) {
+	defer monitors.wg.Done()
 	errorCh := p.GetErrorCh()
 	for {
 		select {
@@ -251,19 +275,20 @@ func (d *Daemon) monitorPipelineErrors(p pipeline.Pipeline) {
 			}
 
 			d.notifier.Error(message)
-		case <-d.ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (d *Daemon) monitorPipelineNotifications(p pipeline.Pipeline) {
+func (d *Daemon) monitorPipelineNotifications(ctx context.Context, monitors *pipelineMonitors, p pipeline.Pipeline) {
+	defer monitors.wg.Done()
 	notifyCh := p.GetNotifyCh()
 	for {
 		select {
 		case mt := <-notifyCh:
 			d.notifier.Send(mt)
-		case <-d.ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 	}

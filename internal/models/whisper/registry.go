@@ -2,6 +2,8 @@ package whisper
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -52,7 +54,7 @@ func Download(ctx context.Context, modelID string, onProgress ProgressFunc) erro
 	if err != nil {
 		return fmt.Errorf("failed to get models directory: %w", err)
 	}
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("failed to create models directory: %w", err)
 	}
 
@@ -60,7 +62,7 @@ func Download(ctx context.Context, modelID string, onProgress ProgressFunc) erro
 	tempPath := destPath + ".downloading"
 
 	// create temp file
-	out, err := os.Create(tempPath)
+	out, err := os.OpenFile(tempPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
@@ -119,6 +121,10 @@ func Download(ctx context.Context, modelID string, onProgress ProgressFunc) erro
 		}
 	}
 
+	if err := verifySHA1(tempPath, info.SHA1); err != nil {
+		return err
+	}
+
 	// close file before rename
 	if err := out.Close(); err != nil {
 		return fmt.Errorf("failed to close file: %w", err)
@@ -127,6 +133,30 @@ func Download(ctx context.Context, modelID string, onProgress ProgressFunc) erro
 	// rename temp file to final destination
 	if err := os.Rename(tempPath, destPath); err != nil {
 		return fmt.Errorf("failed to finalize download: %w", err)
+	}
+
+	return nil
+}
+
+func verifySHA1(path, expected string) error {
+	if expected == "" {
+		return fmt.Errorf("missing expected SHA1 for downloaded model")
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("failed to open downloaded model for verification: %w", err)
+	}
+	defer file.Close()
+
+	hash := sha1.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return fmt.Errorf("failed to hash downloaded model: %w", err)
+	}
+
+	actual := hex.EncodeToString(hash.Sum(nil))
+	if actual != expected {
+		return fmt.Errorf("download checksum mismatch: expected %s, got %s", expected, actual)
 	}
 
 	return nil

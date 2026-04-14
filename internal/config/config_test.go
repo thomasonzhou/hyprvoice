@@ -1629,6 +1629,62 @@ type = "log"`
 	}
 }
 
+func TestConfig_Clone_DeepCopy(t *testing.T) {
+	original := &Config{
+		Providers: map[string]ProviderConfig{
+			"openai": {APIKey: "sk-original"},
+		},
+		Keywords: []string{"hyprvoice", "dictation"},
+		Injection: InjectionConfig{
+			Backends: []string{"wtype", "clipboard"},
+		},
+	}
+
+	clone := original.Clone()
+	clone.Providers["openai"] = ProviderConfig{APIKey: "sk-mutated"}
+	clone.Keywords[0] = "changed"
+	clone.Injection.Backends[0] = "ydotool"
+
+	if got := original.Providers["openai"].APIKey; got != "sk-original" {
+		t.Fatalf("original provider API key mutated: got %q", got)
+	}
+	if got := original.Keywords[0]; got != "hyprvoice" {
+		t.Fatalf("original keywords mutated: got %q", got)
+	}
+	if got := original.Injection.Backends[0]; got != "wtype" {
+		t.Fatalf("original injection backends mutated: got %q", got)
+	}
+}
+
+func TestManager_GetConfigReturnsDeepCopy(t *testing.T) {
+	manager := &Manager{
+		config: &Config{
+			Providers: map[string]ProviderConfig{
+				"openai": {APIKey: "sk-original"},
+			},
+			Keywords: []string{"hyprvoice"},
+			Injection: InjectionConfig{
+				Backends: []string{"clipboard"},
+			},
+		},
+	}
+
+	got := manager.GetConfig()
+	got.Providers["openai"] = ProviderConfig{APIKey: "sk-mutated"}
+	got.Keywords[0] = "changed"
+	got.Injection.Backends[0] = "wtype"
+
+	if manager.config.Providers["openai"].APIKey != "sk-original" {
+		t.Fatalf("manager config provider mutated: got %q", manager.config.Providers["openai"].APIKey)
+	}
+	if manager.config.Keywords[0] != "hyprvoice" {
+		t.Fatalf("manager config keywords mutated: got %q", manager.config.Keywords[0])
+	}
+	if manager.config.Injection.Backends[0] != "clipboard" {
+		t.Fatalf("manager config backends mutated: got %q", manager.config.Injection.Backends[0])
+	}
+}
+
 func TestConfig_LLMDefaults(t *testing.T) {
 	config := &Config{
 		LLM: LLMConfig{

@@ -282,7 +282,7 @@ func (a *ElevenLabsStreamingAdapter) readLoop() {
 
 		case "committed_transcript", "committed_transcript_with_timestamps":
 			// final result
-			log.Printf("elevenlabs-streaming: committed: %q", msg.Text)
+			log.Printf("elevenlabs-streaming: committed transcript received (%d chars)", len(msg.Text))
 			if msg.Text != "" {
 				a.resultsCh <- TranscriptionResult{Text: msg.Text, IsFinal: true}
 			}
@@ -310,7 +310,7 @@ func (a *ElevenLabsStreamingAdapter) readLoop() {
 			a.emitResultError(err)
 
 		default:
-			log.Printf("elevenlabs-streaming: unknown message type: %s payload=%s", msg.MessageType, strings.TrimSpace(string(message)))
+			log.Printf("elevenlabs-streaming: unknown message type: %s (%d bytes)", msg.MessageType, len(message))
 		}
 	}
 }

@@ -2,6 +2,7 @@ package whisper
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -273,5 +274,25 @@ func TestModelInfo_HasAllFields(t *testing.T) {
 		if m.Size == "" {
 			t.Errorf("Model %s has empty Size", m.ID)
 		}
+		if len(m.SHA1) != 40 {
+			t.Errorf("Model %s has invalid SHA1 length: %q", m.ID, m.SHA1)
+		}
+	}
+}
+
+func TestVerifySHA1(t *testing.T) {
+	tempDir := t.TempDir()
+	path := filepath.Join(tempDir, "model.bin")
+	data := []byte("hyprvoice-test-data")
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	if err := verifySHA1(path, "a66fac89e3eeb5946d894a55e8baf456f982e930"); err != nil {
+		t.Fatalf("verifySHA1() error = %v", err)
+	}
+
+	if err := verifySHA1(path, "0000000000000000000000000000000000000000"); err == nil {
+		t.Fatal("verifySHA1() should fail for mismatched checksum")
 	}
 }

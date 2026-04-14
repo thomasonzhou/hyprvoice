@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -533,13 +534,60 @@ func TestNewSimpleTranscriber(t *testing.T) {
 		t.Errorf("Config not set correctly")
 	}
 
-	if transcriber.running {
+	transcriber.lifecycleMu.Lock()
+	running := transcriber.running
+	transcriber.lifecycleMu.Unlock()
+	if running {
 		t.Errorf("Transcriber should not be running initially")
 	}
 
 	if len(transcriber.audioBuffer) != 0 {
 		t.Errorf("Audio buffer should be empty initially")
 	}
+}
+
+func TestSimpleTranscriber_StartBlockedWhileStopping(t *testing.T) {
+	config := Config{
+		Provider: "openai",
+		APIKey:   "test-key",
+		Language: "en",
+		Model:    "whisper-1",
+	}
+
+	stopGate := make(chan struct{})
+	stopStarted := make(chan struct{})
+	adapter := &MockBatchAdapter{
+		TranscribeFunc: func(ctx context.Context, audioData []byte) (string, error) {
+			close(stopStarted)
+			<-stopGate
+			return "done", nil
+		},
+	}
+	transcriber := NewSimpleTranscriber(config, adapter)
+
+	ctx := context.Background()
+	frameCh := make(chan recording.AudioFrame)
+	if _, err := transcriber.Start(ctx, frameCh); err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+	frameCh <- recording.AudioFrame{Data: []byte{1, 2, 3, 4}, Timestamp: time.Now()}
+	close(frameCh)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_ = transcriber.Stop(ctx)
+	}()
+
+	<-stopStarted
+
+	if _, err := transcriber.Start(ctx, make(chan recording.AudioFrame)); err == nil {
+		t.Fatal("Start() should fail while Stop() is still in progress")
+	}
+
+	close(stopGate)
+	wg.Wait()
 }
 
 func TestTranscriptionAdapter(t *testing.T) {

@@ -117,8 +117,8 @@ func (a *ElevenLabsAdapter) Transcribe(ctx context.Context, audioData []byte) (s
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		log.Printf("elevenlabs-adapter: API returned status %d: %s", resp.StatusCode, string(bodyBytes))
-		return "", fmt.Errorf("elevenlabs API status %d: %s", resp.StatusCode, string(bodyBytes))
+		log.Printf("elevenlabs-adapter: API returned status %d (%d bytes)", resp.StatusCode, len(bodyBytes))
+		return "", fmt.Errorf("elevenlabs API status %d", resp.StatusCode)
 	}
 
 	var result ElevenLabsResponse

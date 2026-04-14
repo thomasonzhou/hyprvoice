@@ -144,6 +144,25 @@ Configuration lives in `~/.config/hyprvoice/config.toml` and hot-reloads automat
 - `docs/architecture.md` - architecture and adapter overview
 - `docs/structure.md` - code map and entry points
 - `docs/testing.md` - integration testing with test-models
+- `docs/audit.md` - audit findings and remediation plan
+
+## Hardening Status
+
+Recent security and robustness work:
+
+- transcript-bearing logs were reduced so normal operation no longer logs dictated text from the main pipeline and current streaming adapters
+- config writes are atomic and config files are written with stricter permissions
+- daemon pipeline monitors are scoped per run to avoid goroutine leaks across repeated toggles
+- daemon IPC reads are bounded to the expected command size
+- config reads now deep-copy shared maps and slices before returning values
+- local whisper model downloads now verify the published upstream checksum before install
+- `SimpleTranscriber` lifecycle state is guarded so start/stop overlap is handled more safely
+
+Follow-up work still worth doing:
+
+- move provider secrets to an OS keyring or environment-only flow if stricter secret storage is needed
+- add a `hyprvoice doctor` command for environment, dependency, and backend diagnostics
+- continue tightening download trust if upstream publishes stronger integrity metadata than the current checksum source
 
 ## Troubleshooting
 

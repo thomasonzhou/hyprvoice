@@ -59,9 +59,7 @@ func (m *Manager) GetConfig() *Config {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	// Return a copy to prevent external modification
-	configCopy := *m.config
-	return &configCopy
+	return m.config.Clone()
 }
 
 // IsLegacy returns true if the config is in legacy format and needs onboarding

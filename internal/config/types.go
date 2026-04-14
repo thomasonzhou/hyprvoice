@@ -23,6 +23,32 @@ type Config struct {
 	LLM           LLMConfig                 `toml:"llm"`
 }
 
+// Clone returns a deep copy of the config so callers cannot mutate shared maps or slices.
+func (c *Config) Clone() *Config {
+	if c == nil {
+		return nil
+	}
+
+	clone := *c
+
+	if c.Providers != nil {
+		clone.Providers = make(map[string]ProviderConfig, len(c.Providers))
+		for name, providerCfg := range c.Providers {
+			clone.Providers[name] = providerCfg
+		}
+	}
+
+	if c.Keywords != nil {
+		clone.Keywords = append([]string(nil), c.Keywords...)
+	}
+
+	if c.Injection.Backends != nil {
+		clone.Injection.Backends = append([]string(nil), c.Injection.Backends...)
+	}
+
+	return &clone
+}
+
 // ProviderConfig holds API key for a provider
 type ProviderConfig struct {
 	APIKey string `toml:"api_key"`

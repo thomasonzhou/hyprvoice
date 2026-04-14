@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -291,6 +292,41 @@ func TestDaemon_StopPipeline(t *testing.T) {
 	daemon.mu.RUnlock()
 }
 
+func TestDaemon_StopPipelineStopsOldMonitors(t *testing.T) {
+	daemon := &Daemon{
+		ctx:      context.Background(),
+		notifier: &mockNotifier{},
+	}
+
+	mockPipeline := &MockPipeline{
+		errorCh:  make(chan pipeline.PipelineError, 1),
+		notifyCh: make(chan notify.MessageType, 1),
+	}
+
+	daemon.mu.Lock()
+	daemon.pipeline = mockPipeline
+	daemon.monitors = daemon.startPipelineMonitors(mockPipeline)
+	daemon.mu.Unlock()
+
+	daemon.stopPipeline()
+
+	mockPipeline.errorCh <- pipeline.PipelineError{Message: "should not be delivered"}
+	mockPipeline.notifyCh <- notify.MsgTranscribing
+
+	time.Sleep(50 * time.Millisecond)
+
+	notifier := daemon.notifier.(*mockNotifier)
+	notifier.mu.Lock()
+	defer notifier.mu.Unlock()
+
+	if len(notifier.errors) != 0 {
+		t.Fatalf("expected no error notifications after stopPipeline, got %v", notifier.errors)
+	}
+	if len(notifier.messages) != 0 {
+		t.Fatalf("expected no notifications after stopPipeline, got %v", notifier.messages)
+	}
+}
+
 func TestDaemon_Handle_Commands(t *testing.T) {
 	// Set up a temporary config directory
 	tempDir := t.TempDir()
@@ -357,15 +393,54 @@ func TestDaemon_Handle_Commands(t *testing.T) {
 }
 
 // MockPipeline implements pipeline.Pipeline for testing
-type MockPipeline struct{}
+type MockPipeline struct {
+	status   pipeline.Status
+	errorCh  chan pipeline.PipelineError
+	actionCh chan pipeline.Action
+	notifyCh chan notify.MessageType
+}
 
 func (m *MockPipeline) Run(ctx context.Context) {}
 func (m *MockPipeline) Stop()                   {}
-func (m *MockPipeline) Status() pipeline.Status { return pipeline.Idle }
-func (m *MockPipeline) GetErrorCh() <-chan pipeline.PipelineError {
-	return make(chan pipeline.PipelineError)
+func (m *MockPipeline) Status() pipeline.Status {
+	if m.status == "" {
+		return pipeline.Idle
+	}
+	return m.status
 }
-func (m *MockPipeline) GetActionCh() chan<- pipeline.Action { return make(chan pipeline.Action) }
+func (m *MockPipeline) GetErrorCh() <-chan pipeline.PipelineError {
+	if m.errorCh == nil {
+		m.errorCh = make(chan pipeline.PipelineError)
+	}
+	return m.errorCh
+}
+func (m *MockPipeline) GetActionCh() chan<- pipeline.Action {
+	if m.actionCh == nil {
+		m.actionCh = make(chan pipeline.Action)
+	}
+	return m.actionCh
+}
 func (m *MockPipeline) GetNotifyCh() <-chan notify.MessageType {
-	return make(chan notify.MessageType)
+	if m.notifyCh == nil {
+		m.notifyCh = make(chan notify.MessageType)
+	}
+	return m.notifyCh
+}
+
+type mockNotifier struct {
+	mu       sync.Mutex
+	messages []notify.MessageType
+	errors   []string
+}
+
+func (m *mockNotifier) Send(mt notify.MessageType) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.messages = append(m.messages, mt)
+}
+
+func (m *mockNotifier) Error(msg string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.errors = append(m.errors, msg)
 }
