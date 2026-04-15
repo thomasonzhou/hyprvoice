@@ -79,6 +79,61 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestNew_DisabledNotificationsUseNopNotifier(t *testing.T) {
+	tempDir := t.TempDir()
+	originalConfigDir := os.Getenv("XDG_CONFIG_HOME")
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+	defer func() {
+		if originalConfigDir == "" {
+			os.Unsetenv("XDG_CONFIG_HOME")
+		} else {
+			os.Setenv("XDG_CONFIG_HOME", originalConfigDir)
+		}
+	}()
+
+	configPath := filepath.Join(tempDir, "hyprvoice", "config.toml")
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		t.Fatalf("Failed to create config directory: %v", err)
+	}
+
+	configContent := `[recording]
+sample_rate = 16000
+channels = 1
+format = "s16"
+buffer_size = 8192
+channel_buffer_size = 30
+timeout = "5m"
+
+[providers.openai]
+api_key = "test-key"
+
+[transcription]
+provider = "openai"
+model = "whisper-1"
+
+[injection]
+backends = ["ydotool", "wtype", "clipboard"]
+ydotool_timeout = "5s"
+wtype_timeout = "5s"
+clipboard_timeout = "3s"
+
+[notifications]
+enabled = false
+type = "desktop"`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("Failed to create config file: %v", err)
+	}
+
+	daemon, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	if _, ok := daemon.notifier.(*notify.Nop); !ok {
+		t.Fatalf("daemon notifier = %T, want *notify.Nop", daemon.notifier)
+	}
+}
+
 func TestDaemon_Status(t *testing.T) {
 	// Set up a temporary config directory
 	tempDir := t.TempDir()

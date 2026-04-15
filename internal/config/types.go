@@ -110,6 +110,18 @@ type NotificationsConfig struct {
 	Messages MessagesConfig `toml:"messages"`
 }
 
+// EffectiveType resolves the runtime notification type, keeping backward
+// compatibility with the legacy enabled flag still written by the TUI/config.
+func (n NotificationsConfig) EffectiveType() string {
+	if !n.Enabled {
+		return "none"
+	}
+	if n.Type == "" {
+		return "desktop"
+	}
+	return n.Type
+}
+
 type MessageConfig struct {
 	Title string `toml:"title"`
 	Body  string `toml:"body"`

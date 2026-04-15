@@ -47,7 +47,7 @@ func New() (*Daemon, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// force desktop notifications when legacy config so user sees the onboarding prompt
-	notifType := conf.Notifications.Type
+	notifType := conf.Notifications.EffectiveType()
 	if configMgr.IsLegacy() {
 		notifType = "desktop"
 	}
@@ -69,7 +69,7 @@ func (d *Daemon) onConfigReload() {
 	conf := d.configMgr.GetConfig()
 
 	d.mu.Lock()
-	d.notifier = notify.NewNotifier(conf.Notifications.Type, conf.Notifications.Messages.Resolve())
+	d.notifier = notify.NewNotifier(conf.Notifications.EffectiveType(), conf.Notifications.Messages.Resolve())
 	d.mu.Unlock()
 
 	d.notifier.Send(notify.MsgConfigReloaded)

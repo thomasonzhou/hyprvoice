@@ -2073,3 +2073,43 @@ type = "log"`
 		}
 	})
 }
+
+func TestNotificationsConfig_EffectiveType(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  NotificationsConfig
+		want string
+	}{
+		{
+			name: "disabled_overrides_explicit_type",
+			cfg: NotificationsConfig{
+				Enabled: false,
+				Type:    "desktop",
+			},
+			want: "none",
+		},
+		{
+			name: "enabled_defaults_empty_type_to_desktop",
+			cfg: NotificationsConfig{
+				Enabled: true,
+			},
+			want: "desktop",
+		},
+		{
+			name: "enabled_preserves_explicit_type",
+			cfg: NotificationsConfig{
+				Enabled: true,
+				Type:    "log",
+			},
+			want: "log",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cfg.EffectiveType(); got != tt.want {
+				t.Fatalf("EffectiveType() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
